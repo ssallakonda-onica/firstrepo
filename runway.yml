@@ -1,9 +1,7 @@
----
+ignore_git_branch: true
+
 deployments:
   - modules:
-      - ./
+      - CloudFormation_templates
     regions:
       - us-east-1
-    environments:
-      DEV:
-        stacker
