@@ -1,17 +1,17 @@
 sys_path: ./
-namespace: ${environment}
-stacker_bucket: ${environment}-templates-sallakonda  # templates are small enough to upload directly
-
-sys_path: ./CloudFormation_templates/
+environment: ${environment}
+namespace: ${namespace}
+stacker_bucket: ${stacker_bucket_name}  # templates are small enough to upload directly
 
 stacks:
-  ec2role:
-    template_path: templates/CF-IAMROLE.yml
+- enabled: true
+    name: ec2role-${environment}
+    template_path: ./templates/CF-IAMROLE.yml
     variables:
       ReadonlyPolicyARN: ${readonly_policy_arn}
-
-  vpc:
-    template_path: templates/CF-VPC.yml
+- enabled: true
+    name: vpc-${environment}
+    template_path: ./templates/CF-VPC.yml
     variables:
       VpcCidr: ${vpc_cidr}
 

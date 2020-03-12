@@ -1,7 +1,8 @@
-ignore_git_branch: true
-
 deployments:
-  - modules:
-      - CloudFormation_templates
-    regions:
-      - us-east-1
+- modules:
+  - name: runway-module
+    path: ./core.cfn
+  regions:
+  - us-east-1
+ignore_git_branch: false
+tests: []

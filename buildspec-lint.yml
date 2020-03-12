@@ -1,0 +1,16 @@
+version: 0.2
+
+# env:
+#   variables:
+#     ENV_VAR: "test"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.7
+    commands:
+      - if [ ! -f /usr/local/bin/runway ]; then pip install runway; fi
+
+  build:
+    commands:
+      - runway plan
