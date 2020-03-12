@@ -4,12 +4,11 @@ namespace: ${namespace}
 stacker_bucket: ${stacker_bucket_name}  # templates are small enough to upload directly
 
 stacks:
-- enabled: true
     name: ec2role-${environment}
     template_path: ./templates/CF-IAMROLE.yml
     variables:
       ReadonlyPolicyARN: ${readonly_policy_arn}
-- enabled: true
+
     name: vpc-${environment}
     template_path: ./templates/CF-VPC.yml
     variables:
