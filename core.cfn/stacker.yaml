@@ -5,7 +5,7 @@ stacker_bucket: ${stacker_bucket_name}  # templates are small enough to upload d
 
 stacks:
   ec2role:
-    template_path: ./templates/CF-IAMROLE.yml
+    template_path: ./templates/CF-IAMRole.yml
     variables:
       ReadonlyPolicyARN: ${readonly_policy_arn}
 
