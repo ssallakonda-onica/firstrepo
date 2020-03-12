@@ -1,0 +1,92 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create Internet and NAT Gateways
+
+Parameters:
+  VpcCidr:
+    Description: IPv4 VPC CIDR (e.g. 172.16.24.0/21)
+    Type: String
+  PublicSubnetA:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PublicSubnetB:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+
+Resources:
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-InternetGateway"
+
+  GatewayToInternet:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VpcCidr
+      InternetGatewayId:
+        Ref: InternetGateway
+
+  ElasticIPA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  ElasticIPB:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NATGatewayA:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - ElasticIPA
+        - AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-NATGatewayA"
+    DependsOn:
+      ElasticIPA
+
+  NATGatewayB:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - ElasticIPB
+        - AllocationId
+      SubnetId: !Ref PublicSubnetB
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-NATGatewayB"
+    DependsOn:
+      ElasticIPB
+
+Outputs:
+  InternetGateway:
+    Description: InternetGateway
+    Value: !Ref InternetGateway
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-InternetGateway"
+  NATGatewayA:
+    Description: NATGatewayA
+    Value: !Ref NATGatewayA
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-NATGatewayA"
+  NATGatewayB:
+    Description: NATGatewayB
+    Value: !Ref NATGatewayB
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-NATGatewayB"

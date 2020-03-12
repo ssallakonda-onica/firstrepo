@@ -1,0 +1,69 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: ALB resources
+
+Parameters:
+  HealthCheckInterval:
+    Type: Number
+    Default: 30
+  HealthCheckTimeout:
+    Type: Number
+    Default: 5
+  HealthyThreshold:
+    Type: Number
+    Default: 10
+  UnHealthyThreshold:
+    Type: Number
+    Default: 2
+  ConnectionIdleTimeout:
+    Type: String
+    Default: '300'
+  SecurityGroupALB:
+    Type: String
+  PrivateSubnetA:
+    Description: 'Specify 1st private subnet'
+    Type: String
+  PrivateSubnetB:
+    Description: 'Specify 2nd private subnet'
+    Type: String
+
+Resources:
+  ClassicLB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - Ref: SecurityGroupALB
+      Scheme: internal
+      Subnets:
+        - Ref: PrivateSubnetA
+        - Ref: PrivateSubnetB
+      ConnectionSettings:
+        IdleTimeout: !Ref ConnectionIdleTimeout
+      CrossZone: true
+      HealthCheck:
+        HealthyThreshold: !Ref HealthyThreshold
+        Interval: !Ref HealthCheckInterval
+        Target: TCP:22
+        Timeout: !Ref HealthCheckTimeout
+        UnhealthyThreshold: !Ref UnHealthyThreshold
+      Listeners:
+        - InstancePort: 22
+          InstanceProtocol: TCP
+          LoadBalancerPort: 22
+          Protocol: TCP
+      LoadBalancerName:
+        Fn::Sub: "${AWS::StackName}-ClassicLB"
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: "${AWS::StackName}-ClassicLB"
+
+Outputs:
+  ClassicLB:
+    Description: ClassicLB
+    Value:
+      Fn::GetAtt:
+        - ClassicLB
+        - DNSName

@@ -1,0 +1,105 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create 2 private and 2 public Subnets
+
+Parameters:
+  PrivateSubnetA:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PrivateSubnetB:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PublicSubnetA:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PublicSubnetB:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  VpcCidr:
+    Description: IPv4 VPC CIDR (e.g. 172.16.24.0/21)
+    Type: String
+
+Resources:
+  SubnetPrivateA:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VpcCidr
+      CidrBlock: !Ref PrivateSubnetA
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PrivateA"
+
+  SubnetPrivateB:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VpcCidr
+      CidrBlock: !Ref PrivateSubnetB
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PrivateB"
+
+  SubnetPublicA:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VpcCidr
+      CidrBlock: !Ref PublicSubnetA
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PublicA"
+
+  SubnetPublicB:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VpcCidr
+      CidrBlock: !Ref PublicSubnetB
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PublicB"
+
+Outputs:
+  PrivateSubnetA:
+    Description: PrivateSubnetA
+    Value: !Ref SubnetPrivateA
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PrivateA"
+  PrivateSubnetB:
+    Description: PrivateSubnetB
+    Value: !Ref SubnetPrivateB
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PrivateB"
+  PublicSubnetA:
+    Description: PublicSubnetA
+    Value: !Ref SubnetPublicA
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PublicA"
+  PublicSubnetB:
+    Description: PublicSubnetB
+    Value: !Ref SubnetPublicB
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PublicB"

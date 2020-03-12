@@ -1,0 +1,9 @@
+---
+deployments:
+  - modules:
+      - ./
+    regions:
+      - us-east-1
+    environments:
+      DEV:
+        stacker

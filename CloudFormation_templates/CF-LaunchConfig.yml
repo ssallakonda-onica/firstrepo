@@ -1,0 +1,62 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create Internet and NAT Gateways
+
+Parameters:
+  VolumeSize:
+    Description: Size of the volume
+    Type: Number
+    Default: 10
+  InternalServerAMI:
+    Description: 'Specify AMI ID to build Instance'
+    Type: AWS::EC2::Image::Id
+    Default: ami-00eb20669e0990cb4
+  KeyPair:
+    Description: 'Specify KeyPair to login to instance'
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: OATS-Santhosh-Onbaording
+  EC2InstanceType:
+    Description: 'Specify EC2 Instance type and size'
+    Type: String
+    Default: t2.micro
+  SecurityGroup:
+    Description: 'Specify Security Group to be attached to Instance'
+    Type: AWS::EC2::SecurityGroup::Id
+  InstanceProfile:
+    Description: 'Specify EC2 profile to attach to instance'
+    Type: String
+  ElasticFileSystem:
+    Description: 'Specify EFS Id to mount'
+    Type: String
+
+Resources:
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: 'gp2'
+            DeleteOnTermination: 'true'
+      AssociatePublicIpAddress: 'false'
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyPair
+      ImageId: !Ref InternalServerAMI
+      InstanceType: !Ref EC2InstanceType
+      SecurityGroups: [!Ref 'SecurityGroup']
+      UserData:
+        'Fn::Base64': !Sub |
+          #! /bin/bash -xe
+          sudo yum update -y
+          sudo yum install -y amazon-efs-utils
+          sudo mkdir efs
+          #EfsId=${ElasticFileSystem}
+          #sudo mount -t efs $EfsId:/ efs
+          sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport "${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/" efs
+Outputs:
+  LaunchConfig:
+    Description: LaunchConfig
+    Value: !Ref LaunchConfig

@@ -1,0 +1,105 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create EC2 instance in a private subnet
+
+Parameters:
+  VPNServerAMI:
+    Description: 'Specify AMI ID to build Instance'
+    Type: AWS::EC2::Image::Id
+    Default: ami-00fe7cf9c33fe0cd4
+  KeyPair:
+    Description: 'Specify KeyPair to login to instance'
+    Type: String
+    Default: OATS-Santhosh-Onbaording
+  EC2InstanceType:
+    Description: 'Specify EC2 Instance type and size'
+    Type: String
+    Default: t2.small
+  SecurityGroup:
+    Description: 'Specify Security Group to be attached to Instance'
+    Type: AWS::EC2::SecurityGroup::Id
+  Subnet:
+    Description: 'Specify subnet to start the instance'
+    Type: AWS::EC2::Subnet::Id
+  VPNClientCIDR:
+    Description: 'Specify VPN CIDR to allow traffic'
+    Type: String
+  PublicRouteTable:
+    Description: 'Specify Public Routetable to update route to VPN Clients'
+    Type: String
+  PrivateRouteTableA:
+    Description: 'Specify Private Routetable A to update route to VPN Clients'
+    Type: String
+  PrivateRouteTableB:
+    Description: 'Specify Private Routetable B to update route to VPN Clients'
+    Type: String
+
+Resources:
+  EC2VPNServer:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      DisableApiTermination: False
+      EbsOptimized: False
+      ImageId:
+        Ref: VPNServerAMI
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: !Ref EC2InstanceType
+      KeyName:
+        Ref: KeyPair
+      Monitoring: False
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            -
+              !Ref SecurityGroup
+          SubnetId: !Ref Subnet
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-VPNServer"
+      Tenancy: default
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref EC2VPNServer
+
+  PublicVPNRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: !Ref VPNClientCIDR
+      InstanceId: !Ref EC2VPNServer
+
+  PrivateVPNRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTableA
+      DestinationCidrBlock: !Ref VPNClientCIDR
+      InstanceId: !Ref EC2VPNServer
+
+  PrivateVPNRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTableB
+      DestinationCidrBlock: !Ref VPNClientCIDR
+      InstanceId: !Ref EC2VPNServer
+
+Outputs:
+  EC2VPNServer:
+    Description: EC2Server
+    Value: !Ref EC2VPNServer
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-VPNServer"

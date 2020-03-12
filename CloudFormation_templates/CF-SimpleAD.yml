@@ -1,0 +1,78 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create a Simple AD
+
+Parameters:
+  DirectoryName:
+    Description: Name for the Directory Ex. corp.abc.com
+    Type: String
+  DirectoryPassword:
+    Description: Administrator Password for the Directory
+    Type: String
+  DirectoryShortName:
+    Description: Short name for the Directory Ex. CORP
+    Type: String
+  DirectorySize:
+    Description: Size of the Directory
+    AllowedValues:
+      - Large
+      - Small
+    Type: String
+    Default: Small
+  SubnetID1:
+    Description: Subnet ID-1 to host Directory
+    Type: AWS::EC2::Subnet::Id
+  SubnetID2:
+    Description: Subnet ID-2 to host Directory
+    Type: AWS::EC2::Subnet::Id
+  VPCId:
+    Description: VPC Id to host Directory
+    Type: AWS::EC2::VPC::Id
+
+Resources:
+  Directory:
+    Type: AWS::DirectoryService::SimpleAD
+    Properties:
+      Description: "Directory to allow access to AWS resources"
+      Name: !Ref DirectoryName
+      Password: !Ref DirectoryPassword
+      ShortName: !Ref DirectoryShortName
+      Size: !Ref DirectorySize
+      VpcSettings:
+        SubnetIds:
+          - Ref: SubnetID1
+          - Ref: SubnetID2
+        VpcId:
+          Ref: VPCId
+
+Outputs:
+  Directory:
+    Description: Simple Active Directory
+    Value: !Ref Directory
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-DirectoryId"
+  PrimaryDNS:
+    Description: DNS IP Address of SimpleAD
+    Value:
+      Fn::Select:
+      - '0'
+      - Fn::GetAtt:
+        - Directory
+        - DnsIpAddresses
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-DNSip-1"
+  SecondaryDNS:
+    Description: DNS IP Address of SimpleAD
+    Value:
+      Fn::Select:
+      - '1'
+      - Fn::GetAtt:
+        - Directory
+        - DnsIpAddresses
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-DNSip-2"

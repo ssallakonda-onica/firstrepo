@@ -1,0 +1,122 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Creates a Client VPN EndPoint
+
+Parameters:
+  DirectoryId:
+    Description: Provide the Directory Id details
+    Type: String
+  ClientCidr:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$"
+    Description: IPv4 CIDR (e.g. 172.16.24.0/21)
+    Type: String
+  CloudWatchLogGroup:
+    Description: Provide Cloud Watch log group name
+    Type: String
+  CloudWatchLogStream:
+    Description: Provide Cloud Watch log stream name
+    Type: String
+  RetentionDays:
+    Description: Provide number of days for log retention
+    Type: Number
+  DnsServer1:
+    Description: Primary DNS Server IP Address
+    Type: String
+  DnsServer2:
+    Description: Secondary DNS Server IP Address
+    Type: String
+  ServerCertificate:
+    Description: Server Certificate ARN from ACM
+    Type: String
+  SubnetIdA:
+    Description: Subnet in AZ-A for target network association
+    Type: AWS::EC2::Subnet::Id
+  SubnetIdB:
+    Description: Subnet in AZ-B for target network association
+    Type: AWS::EC2::Subnet::Id
+  AdGroupId:
+    Description: Provide AD Group ID of users for client vpn access
+    Type: String
+  TargetCidr:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$"
+    Description: Provide the target network cidr for vpn client access to VPC (e.g. 172.16.24.0/21)
+    Type: String
+
+Resources:
+  LogGroupClientVPN:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: !Ref RetentionDays
+      LogGroupName: !Ref CloudWatchLogGroup
+
+  LogStreamClientVPN:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref CloudWatchLogGroup
+      LogStreamName: !Ref CloudWatchLogStream
+
+  EndpointClientVPN:
+    Type: AWS::EC2::ClientVpnEndpoint
+    DependsOn:
+    - LogGroupClientVPN
+    - LogStreamClientVPN
+    Properties:
+      AuthenticationOptions:
+      - Type: "directory-service-authentication"
+        ActiveDirectory:
+          DirectoryId: !Ref DirectoryId
+      ClientCidrBlock: !Ref ClientCidr
+      ConnectionLogOptions:
+        Enabled: true
+        CloudwatchLogGroup: !Ref LogGroupClientVPN
+        CloudwatchLogStream: !Ref LogStreamClientVPN
+      Description: "Client VPN Endpoint"
+      DnsServers:
+        - Ref: DnsServer1
+        - Ref: DnsServer2
+      ServerCertificateArn: !Ref ServerCertificate
+      SplitTunnel: true
+      TagSpecifications:
+        - ResourceType: "client-vpn-endpoint"
+          Tags:
+            - Key: "Name"
+              Value:
+                Fn::Sub: "${AWS::StackName}-VpnEndpoint"
+      TransportProtocol: "udp"
+
+  TargetNetworkAssociationA:
+    Type: "AWS::EC2::ClientVpnTargetNetworkAssociation"
+    Properties:
+      ClientVpnEndpointId:
+        Ref: EndpointClientVPN
+      SubnetId:
+        Ref: SubnetIdA
+
+  TargetNetworkAssociationB:
+    Type: "AWS::EC2::ClientVpnTargetNetworkAssociation"
+    Properties:
+      ClientVpnEndpointId:
+        Ref: EndpointClientVPN
+      SubnetId:
+        Ref: SubnetIdB
+
+  ClientVpnAuthorizationRule:
+    Type: AWS::EC2::ClientVpnAuthorizationRule
+    Properties:
+      AccessGroupId:
+        Ref: AdGroupId
+      ClientVpnEndpointId:
+        Ref: EndpointClientVPN
+      Description: 'SSL VPN Users VPC access'
+      TargetNetworkCidr:
+        Ref: TargetCidr
+
+Outputs:
+  EndpointClientVPN:
+    Description: Client VPN Endpoint
+    Value: !Ref EndpointClientVPN
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-EndpointClientVPN"

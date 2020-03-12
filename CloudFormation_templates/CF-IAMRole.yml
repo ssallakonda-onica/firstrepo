@@ -1,0 +1,48 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create a IAM Role for EC2 read-only access
+
+Parameters:
+  ReadonlyPolicyARN:
+    Description: 'Specify Policy ARN to associate with IAM Role'
+    Type: String
+    Default: arn:aws:iam::aws:policy/ReadOnlyAccess
+
+Resources:
+  RoleEC2:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        -
+          Ref: "ReadonlyPolicyARN"
+      Path: "/"
+      RoleName:
+        Fn::Sub: "${AWS::StackName}-RoleEC2"
+
+  EC2Profile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        -
+          Ref: "RoleEC2"
+
+Outputs:
+  EC2Profile:
+    Description: EC2ProfileName
+    Value: !Ref EC2Profile
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-RoleEC2"

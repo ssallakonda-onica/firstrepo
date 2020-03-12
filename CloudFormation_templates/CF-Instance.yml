@@ -1,0 +1,64 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create EC2 instance in a private subnet
+
+Parameters:
+  InternalServerAMI:
+    Description: 'Specify AMI ID to build Instance'
+    Type: AWS::EC2::Image::Id
+    Default: ami-00eb20669e0990cb4
+  KeyPair:
+    Description: 'Specify KeyPair to login to instance'
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: OATS-Santhosh-Onbaording
+  EC2InstanceType:
+    Description: 'Specify EC2 Instance type and size'
+    Type: String
+    Default: t2.micro
+  SecurityGroup:
+    Description: 'Specify Security Group to be attached to Instance'
+    Type: AWS::EC2::SecurityGroup::Id
+  Subnet:
+    Description: 'Specify subnet to start the instance'
+    Type: AWS::EC2::Subnet::Id
+  InstanceProfile:
+    Description: 'Specify EC2 profile to attach to instance'
+    Type: String
+
+Resources:
+  EC2InternalServer:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: !Ref 'AWS::Region'
+      DisableApiTermination: False
+      EbsOptimized: False
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageId:
+        Ref: InternalServerAMI
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: !Ref EC2InstanceType
+      KeyName:
+        Ref: KeyPair
+      Monitoring: False
+      SecurityGroupIds:
+        -
+          !Ref SecurityGroup
+      SubnetId: !Ref Subnet
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-InternalServer"
+      Tenancy: default
+
+Outputs:
+  EC2InternalServer:
+    Description: EC2Server
+    Value: !Ref EC2InternalServer
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-InternalServer"

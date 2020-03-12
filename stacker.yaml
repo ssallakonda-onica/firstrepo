@@ -1,0 +1,153 @@
+---
+
+namespace: ${environment}
+stacker_bucket: ${environment}-templates-sallakonda  # templates are small enough to upload directly
+
+sys_path: ./CloudFormation_templates/
+
+stacks:
+  ec2role:
+    template_path: CF-IAMROLE.yml
+    variables:
+      ReadonlyPolicyARN: ${readonly_policy_arn}
+
+  vpc:
+    template_path: CF-VPC.yml
+    variables:
+      VpcCidr: ${vpc_cidr}
+
+#  subnets:
+#    template_path: CF-Subnets.yml
+#    variables:
+#      PrivateSubnetA: ${private_subnet_a}
+#      PrivateSubnetB: ${private_subnet_b}
+#      PublicSubnetA: ${public_subnet_a}
+#      PublicSubnetB: ${public_subnet_b}
+#      VpcCidr: ${output vpc::VPCID}
+#
+#  gateways:
+#    template_path: CF-Gateway.yml
+#    variables:
+#      PublicSubnetA: ${output subnets::PublicSubnetA}
+#      PublicSubnetB: ${output subnets::PublicSubnetB}
+#      VpcCidr: ${output vpc::VPCID}
+#
+#  routetables:
+#    template_path: CF-RouteTable.yml
+#    variables:
+#      PrivateSubnetA: ${output subnets::PrivateSubnetA}
+#      PrivateSubnetB: ${output subnets::PrivateSubnetB}
+#      PublicSubnetA: ${output subnets::PublicSubnetA}
+#      PublicSubnetB: ${output subnets::PublicSubnetB}
+#      VpcCidr: ${output vpc::VPCID}
+#      InternetGateway: ${output gateways::InternetGateway}
+#      NATGatewayA: ${output gateways::NATGatewayA}
+#      NATGatewayB: ${output gateways::NATGatewayB}
+#
+#  securitygroups:
+#    template_path: CF-SecurityGroup.yml
+#    variables:
+#      VpcCidr: ${output vpc::VPCID}
+#      HomeIPAddress: ${home_ip_address}
+#      OfficeIPAddress: ${office_ip_address}
+#
+#  bastion:
+#    template_path: CF-Bastion.yml
+#    variables:
+#      BastionServerAMI: ${bastion_server_ami}
+#      KeyPair: ${key_pair}
+#      EC2InstanceType: ${ec2_instance_type}
+#      SecurityGroup: ${output securitygroups::SGBastionHost}
+#      Subnet: ${output subnets::PublicSubnetA}
+#
+#  internalserver:
+#    template_path: CF-Instance.yml
+#    variables:
+#      InternalServerAMI: ${internal_server_ami}
+#      KeyPair: ${key_pair}
+#      EC2InstanceType: ${ec2_instance_type}
+#      SecurityGroup: ${output securitygroups::SGInternal}
+#      Subnet: ${output subnets::PrivateSubnetA}
+#      InstanceProfile: ${output ec2role::EC2Profile}
+#
+#  vpnserver:
+#    template_path: CF-VPNServer.yml
+#    variables:
+#      VPNServerAMI: ${vpn_server_ami}
+#      KeyPair: ${key_pair}
+#      EC2InstanceType: ${ec2_instance_type}
+#      SecurityGroup: ${output securitygroups::SGVPNClient}
+#      Subnet: ${output subnets::PublicSubnetA}
+#      VPNClientCIDR: ${vpn_client_cidr}
+#      PublicRouteTable: ${output routetables::PublicRouteTable}
+#      PrivateRouteTableA: ${output routetables::PrivateRouteTableA}
+#      PrivateRouteTableB: ${output routetables::PrivateRouteTableB}
+#
+#  EFSMount:
+#    template_path: CF-EFS.yml
+#    variables:
+#      MountTargetSecurityGroup: ${output securitygroups::SGElasticFileSystem}
+#      Subnet: ${output subnets::PrivateSubnetA}
+#
+#  ClassicLB:
+#    template_path: CF-InternalALB.yml
+#    variables:
+#      HealthCheckInterval: ${healthCheck_interval}
+#      HealthCheckTimeout: ${healthCheck_timeout}
+#      HealthyThreshold: ${healthy_threshold}
+#      UnHealthyThreshold: ${unhealthy_threshold}
+#      ConnectionIdleTimeout: ${connection_idle_timeout}
+#      SecurityGroupALB: ${output securitygroups::SGLoadBalancer}
+#      PrivateSubnetA: ${output subnets::PrivateSubnetA}
+#      PrivateSubnetB: ${output subnets::PrivateSubnetB}
+#
+#  LaunchConfig:
+#    template_path: CF-LaunchConfig.yml
+#    variables:
+#      VolumeSize: ${volume_size}
+#      InternalServerAMI: ${internal_server_ami}
+#      KeyPair: ${key_pair}
+#      EC2InstanceType: ${ec2_instance_type}
+#      SecurityGroup: ${output securitygroups::SGAutoScalingGroup}
+#      InstanceProfile: ${output ec2role::EC2Profile}
+#      ElasticFileSystem: ${output EFSMount::ElasticFileSystem}
+#
+#  AutoScalingGroup:
+#    template_path: CF-AutoScaling.yml
+#    variables:
+#      LaunchConfiguration: ${output LaunchConfig::LaunchConfig}
+##      ClassicLoadBalancer: ${output ClassicLB::ClassicLB}
+#      ClassicLoadBalancer: ${load_balancer_name}
+#      PrivateSubnetA: ${output subnets::PrivateSubnetA}
+#      PrivateSubnetB: ${output subnets::PrivateSubnetB}
+#      MinimumCapacity: ${minimum_capacity}
+#      MaximumCapacity: ${maximum_capacity}
+#      DesiredCapacity: ${desired_capacity}
+#
+#  Directory:
+#    template_path: CF-SimpleAD.yml
+#    variables:
+#      DirectoryName: ${directory_name}
+#      DirectoryPassword: ${directory_password}
+#      DirectoryShortName: ${directory_short_name}
+#      DirectorySize: ${directory_size}
+#      SubnetID1: ${output subnets::PrivateSubnetA}
+#      SubnetID2: ${output subnets::PrivateSubnetB}
+#      VPCId: ${output vpc::VPCID}
+#
+#  EndpointClientVPN:
+#    template_path: CF-ClientVPN.yml
+#    variables:
+#      DirectoryId: ${output Directory::Directory}
+#      ClientCidr: ${client_cidr}
+#      CloudWatchLogGroup: ${cloudwatch_log_group}
+#      CloudWatchLogStream: ${cloudwatch_log_stream}
+#      RetentionDays: ${retention_days}
+#      DnsServer1: ${output Directory::PrimaryDNS}
+#      DnsServer2: ${output Directory::SecondaryDNS}
+#      ServerCertificate: ${server_certificate}
+#      SubnetIdA: ${output subnets::PrivateSubnetA}
+#      SubnetIdB: ${output subnets::PrivateSubnetB}
+#      AdGroupId: ${ad_group_id}
+#      TargetCidrVPC: ${target_cidr}
+#

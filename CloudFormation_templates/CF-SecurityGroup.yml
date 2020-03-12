@@ -1,0 +1,215 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create 3 security groups, Bastion SG, VPN SG, Internal SG
+Parameters:
+  VpcCidr:
+    Description: IPv4 VPC CIDR (e.g. 172.16.24.0/21)
+    Type: String
+  HomeIPAddress:
+    Description: IPv4 Address (e.g. 172.16.24.0/21)
+    Type: String
+  OfficeIPAddress:
+    Description: IPv4 Address (e.g. 172.16.24.0/21)
+    Type: String
+
+Resources:
+  SGBastionHost:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for SSH traffic
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGBastionHost"
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGBastionHost"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref HomeIPAddress
+        Description: Santhosh Home
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref OfficeIPAddress
+        Description: Onica Dallas Home
+
+  SGLoadBalancer:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for SSH traffic
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGLoadBalancer"
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGLoadBalancer"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        SourceSecurityGroupId: !Ref SGBastionHost
+        Description: Bastion Security Group
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        SourceSecurityGroupId: !Ref SGVPNClient
+        Description: VPN Server Security Group
+
+  SGAutoScalingGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for SSH traffic
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGAutoScalingGroup"
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGAutoScalingGroup"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        SourceSecurityGroupId: !Ref SGLoadBalancer
+        Description: Elastic Load Balancer
+
+  SGElasticFileSystem:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for EFS traffic
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGElasticFileSystem"
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGElasticFileSystem"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '2049'
+        ToPort: '2049'
+        SourceSecurityGroupId: !Ref SGAutoScalingGroup
+        Description: Auto Scaling Group
+
+  SGVPNClient:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for VPN traffic
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGVPNClient"
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGVPNClient"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref HomeIPAddress
+        Description: Santhosh Home
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref OfficeIPAddress
+        Description: Onica Dallas Home
+      - IpProtocol: udp
+        FromPort: '1194'
+        ToPort: '1194'
+        CidrIp: !Ref HomeIPAddress
+        Description: Santhosh Home
+      - IpProtocol: udp
+        FromPort: '1194'
+        ToPort: '1194'
+        CidrIp: !Ref OfficeIPAddress
+        Description: Onica Dallas Home
+      - IpProtocol: tcp
+        FromPort: '943'
+        ToPort: '943'
+        CidrIp: !Ref HomeIPAddress
+        Description: Santhosh Home
+      - IpProtocol: tcp
+        FromPort: '943'
+        ToPort: '943'
+        CidrIp: !Ref OfficeIPAddress
+        Description: Onica Dallas Home
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: !Ref HomeIPAddress
+        Description: Santhosh Home
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: !Ref OfficeIPAddress
+        Description: Onica Dallas Home
+
+  SGInternal:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn:
+    - SGBastionHost
+    - SGVPNClient
+    Properties:
+      VpcId: !Ref VpcCidr
+      GroupDescription: Security Group for traffic from Bastion and VPN clients
+      GroupName:
+        Fn::Sub: "${AWS::StackName}-SGInternal"
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-SGInternal"
+      SecurityGroupIngress:
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        SourceSecurityGroupId: !Ref SGBastionHost
+        Description: Bastion Security Group
+      - IpProtocol: -1
+        FromPort: -1
+        ToPort: -1
+        SourceSecurityGroupId: !Ref SGVPNClient
+        Description: VPN Security Group
+
+Outputs:
+  SGBastionHost:
+    Description: SGBastionHost
+    Value: !Ref SGBastionHost
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGBastionHost"
+  SGLoadBalancer:
+    Description: SGLoadBalancer
+    Value: !Ref SGLoadBalancer
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGLoadBalancer"
+  SGAutoScalingGroup:
+    Description: SGAutoScalingGroup
+    Value: !Ref SGAutoScalingGroup
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGAutoScalingGroup"
+  SGElasticFileSystem:
+    Description: SGElasticFileSystem
+    Value: !Ref SGElasticFileSystem
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGElasticFileSystem"
+  SGVPNClient:
+    Description: SGVPNClient
+    Value: !Ref SGVPNClient
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGVPNClient"
+  SGInternal:
+    Description: SGInternal
+    Value: !Ref SGInternal
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-SGInternal"

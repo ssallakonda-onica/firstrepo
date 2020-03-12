@@ -1,0 +1,55 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create Internet and NAT Gateways
+
+Parameters:
+  LaunchConfiguration:
+    Description: 'Specify name of the Launch Configuration'
+    Type: String
+  ClassicLoadBalancer:
+    Description: 'Specify name of Load Balancer'
+    Type: String
+  PrivateSubnetA:
+    Description: 'Specify 1st private subnet'
+    Type: String
+  PrivateSubnetB:
+    Description: 'Specify 2nd private subnet'
+    Type: String
+  MinimumCapacity:
+    Description: 'Specify min number of instances'
+    Type: Number
+  MaximumCapacity:
+    Description: 'Specify min number of instances'
+    Type: Number
+  DesiredCapacity:
+    Description: 'Specify min number of instances'
+    Type: Number
+
+Resources:
+  AutoScalingGroup:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchConfigurationName: !Ref LaunchConfiguration
+      MinSize: !Ref MinimumCapacity
+      MaxSize: !Ref MaximumCapacity
+      DesiredCapacity: !Ref DesiredCapacity
+      Cooldown: 300
+      HealthCheckGracePeriod: 1500
+      HealthCheckType: ELB
+      LoadBalancerNames:
+        - !Ref ClassicLoadBalancer
+      VPCZoneIdentifier:
+        - Ref: PrivateSubnetA
+        - Ref: PrivateSubnetB
+      Tags:
+        - PropagateAtLaunch: true
+          Value:
+            Fn::Sub: "${AWS::StackName}-AutoScalingGroup"
+          Key: Name
+
+Outputs:
+  AutoScalingGroup:
+    Description: AutoScalingGroup
+    Value: !Ref AutoScalingGroup

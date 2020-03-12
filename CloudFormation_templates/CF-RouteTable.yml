@@ -1,0 +1,131 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create 2 private and 2 public Subnets
+
+Parameters:
+  VpcCidr:
+    Description: IPv4 VPC CIDR (e.g. 172.16.24.0/21)
+    Type: String
+  PrivateSubnetA:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PrivateSubnetB:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PublicSubnetA:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  PublicSubnetB:
+    Description: 'Specify the class B network ( X.Y.0.0/Z)'
+    Type: String
+  InternetGateway:
+    Description: 'Specify Internet Gateway details'
+    Type: String
+  NATGatewayA:
+    Description: 'Specify NAT Gateway details in AZ - A'
+    Type: String
+  NATGatewayB:
+    Description: 'Specify NAT Gateway details in AZ - B'
+    Type: String
+
+Resources:
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PublicRoute"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PrivateRouteA"
+
+  PrivateRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGatewayA
+
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VpcCidr
+      Tags:
+        - Key: Name
+          Value:
+            Fn::Sub: "${AWS::StackName}-PrivateRouteB"
+
+  PrivateRouteB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGatewayB
+
+  PublicSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId:
+        Ref: PublicRouteTable
+
+  PublicSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId:
+        Ref: PublicRouteTable
+
+  PrivateSubnetRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId:
+        Ref: PrivateRouteTableA
+
+  PrivateSubnetRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId:
+        Ref: PrivateRouteTableB
+
+Outputs:
+  PublicRouteTable:
+    Description: PublicRouteTable
+    Value: !Ref PublicRouteTable
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PublicRoute"
+  PrivateRouteTableA:
+    Description: PrivateRouteTableA
+    Value: !Ref PrivateRouteTableA
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PrivateRouteA"
+  PrivateRouteTableB:
+    Description: PrivateRouteTableB
+    Value: !Ref PrivateRouteTableB
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-PrivateRouteB"

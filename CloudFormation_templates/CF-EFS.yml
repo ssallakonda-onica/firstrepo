@@ -1,0 +1,43 @@
+---
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Create EC2 instance in a private subnet
+
+Parameters:
+  MountTargetSecurityGroup:
+    Description: 'Specify EFS Mount Security Group'
+    Type: AWS::EC2::SecurityGroup::Id
+  Subnet:
+    Description: 'Specify subnet to start the instance'
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  ElasticFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+      - Key: Name
+        Value:
+          Fn::Sub: "${AWS::StackName}-EFS"
+      PerformanceMode: generalPurpose
+      ProvisionedThroughputInMibps: 256
+      ThroughputMode: provisioned
+
+  MountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId:
+        Ref: ElasticFileSystem
+      SubnetId:
+        Ref: Subnet
+      SecurityGroups:
+      - Ref: MountTargetSecurityGroup
+
+Outputs:
+  ElasticFileSystem:
+    Description: ElasticFileSystem
+    Value: !Ref ElasticFileSystem
+  MountTarget:
+    Description: MountTarget
+    Value: !Ref MountTarget
